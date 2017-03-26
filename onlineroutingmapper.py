@@ -162,47 +162,74 @@ class OnlineRoutingMapper(object):
                 print feature['LAT_DEG'], feature['LONG_DEG']
                 port = str(feature['LAT_DEG']) + "," + str(feature['LONG_DEG'])
                 ports.append(port)
-            print 'length of port list is '+ len(ports)
             return ports
         else:
-            print 'The port list is empty'
             return None
 
+    def _getPostOffices(self):
+        """
+            Extract all the co-ordinates from a layer containing morocco post offices
+        """
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "PostalCluster_Pop OGRGeoJSON Point":
+                layer = lyr
+                break
+                    
+        if layer:
+            # We managed to get the layer
+            iter = layer.getFeatures()
+            posts = []
+            for feature in iter:
+                # x = long, y = lat
+                print feature['XX'], feature['XY']
+                post = str(feature['XX']) + "," + str(feature['XY'])
+                posts.append(post)
+                return posts
+            else:
+                return None
+
+    def findClosetPost(self, dst):
+        """
+            Find the closet post office from the destination point.
+        """
+        return '0,0'
+    
     def runAnalysis(self):
-        if len(self.dlg.startTxt.text())>0 and len(self.dlg.stopTxt.text())>0:
+        if len(self.dlg.stopTxt.text())>0:
             
             # Test
             # load co-ordinates of two ports
             # find distances against few postal co-ordinates
            
             ports = self._getPorts()
+            posts = self._getPostOffices()
 
             # Ouarzazate: 30.916667, -6.916667
-            loc1_x = -6.916667
-            loc2_x = -5.224722
-            loc1_y = 30.916667
-            loc2_y = 33.441667
-
-            loc1 = str(loc1_y) + "," + str(loc1_x)
-            loc2 = str(loc2_y) + "," + str(loc2_x)
-            # locs = [loc1, loc2]
-            locs = [loc1]
 
             paths = []
-            # iterate over the ports, find the distance and draw the line
-            for port in ports:
-                # iterate over the locations
-                for loc in locs:
-                    startPoint = port
-                    stopPoint = loc
-                    print str(startPoint) + ', ' + str(stopPoint)
+            try:
+                # iterate over the ports, find the distance and draw the line
+                for post in posts:
+                    for port in ports:
+                        # iterate over the locations
+                        startPoint = port
+                        stopPoint = post
+                        # stopPoint = self.crsTransform(self.findClosetPoint(self.dlg.stopTxt.text()))
         
-                    wkt, url = self.routeEngine.google(startPoint, stopPoint)
-                    paths.append({'wkt': wkt, 'url': url})
-                    # self.routeMaker(wkt)
-           
-            for route in paths:
-                self.routeMaker(route['wkt'])
+                        response = self.routeEngine.google(startPoint, stopPoint)
+                        paths.append({'wkt': response['wkt'], 'dist': response['dist'], 'url': response['url']})
+                        # self.routeMaker(wkt)
+            
+                paths = sorted(paths, key=lambda x: x['dist'])
+                self.routeMaker(paths[0]['wkt'])
+                # self.routeMaker(paths[1]['wkt'])
+            except Exception as err:
+                QgsMessageLog.logMessage(str(err))
+                QMessageBox.warning(self.dlg,'Analysis Error',
+                                    "Cannot calculate the route between the start and stop locations that you entered. Try again.")
+
+            # for route in paths:
+            #    self.routeMaker(route['wkt'])
             # else:
             #   QMessageBox.warning(self.dlg, 'Network Error!', 'There is no internet connection.')
         else:
@@ -224,7 +251,7 @@ class OnlineRoutingMapper(object):
         self.dlg = OnlineRoutingMapperDialog()
         self.dlg.setFixedSize(self.dlg.size())
         self.clickTool = QgsMapToolEmitPoint(self.canvas) #clicktool instance generated in here.
-        self.dlg.startBtn.clicked.connect(lambda : self.toolActivator(self.dlg.startTxt))
+        # self.dlg.startBtn.clicked.connect(lambda : self.toolActivator(self.dlg.startTxt))
         self.dlg.stopBtn.clicked.connect(lambda : self.toolActivator(self.dlg.stopTxt))
         self.dlg.runBtn.clicked.connect(self.runAnalysis)
 
