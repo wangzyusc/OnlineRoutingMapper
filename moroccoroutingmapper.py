@@ -31,24 +31,24 @@ from qgis.core import *
 
 import resources
 
-from onlineroutingmapper_dialog import OnlineRoutingMapperDialog
+from moroccoroutingmapper_dialog import MoroccoRoutingMapperDialog
 
 import os,urllib2
 
-class OnlineRoutingMapper(object):
+class MoroccoRoutingMapper(object):
     def __init__(self, iface):
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Online Routing Mapper')
+        self.menu = self.tr(u'&Morocco Routing Mapper')
         # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'OnlineRoutingMapper')
-        self.toolbar.setObjectName(u'OnlineRoutingMapper')
+        self.toolbar = self.iface.addToolBar(u'MoroccoRoutingMapper')
+        self.toolbar.setObjectName(u'MoroccoRoutingMapper')
 
     def tr(self, message):
-        return QCoreApplication.translate('OnlineRoutingMapper', message)
+        return QCoreApplication.translate('MoroccoRoutingMapper', message)
 
     def add_action(
         self,
@@ -91,7 +91,7 @@ class OnlineRoutingMapper(object):
 
         self.add_action(
             icon_path,
-            text=self.tr(u'Online Routing Mapper'),
+            text=self.tr(u'Morocco Routing Mapper'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -133,7 +133,7 @@ class OnlineRoutingMapper(object):
         layerProvider.addFeatures([feature])
         vectorLayer.commitChanges()
         vectorLayer.updateExtents()
-        vectorLayer.loadNamedStyle(self.plugin_dir + os.sep + 'OnlineRoutingMapper.qml')
+        vectorLayer.loadNamedStyle(self.plugin_dir + os.sep + 'MoroccoRoutingMapper.qml')
         QgsMapLayerRegistry.instance().addMapLayer(vectorLayer)
         destinationCRS = self.canvas.mapSettings().destinationCrs() #getting the project CRS
         sourceCRS = QgsCoordinateReferenceSystem(4326)
@@ -147,7 +147,8 @@ class OnlineRoutingMapper(object):
     def runAnalysis(self):
         if len(self.dlg.startTxt.text())>0 and len(self.dlg.stopTxt.text())>0:
             if self.checkNetConnection():
-                startPoint = self.crsTransform(self.dlg.startTxt.text())
+                # startPoint = self.crsTransform(self.dlg.startTxt.text())
+                startPoint = self.crsTransform('-436005.04954608157,4197907.2588281855')
                 stopPoint = self.crsTransform(self.dlg.stopTxt.text())
 
                 if self.dlg.serviceCombo.currentIndex() == 0: #google
