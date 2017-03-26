@@ -40,7 +40,7 @@ class RouteProvider(object):
         self.__serviceType__ = 0
         url = self.__googleBaseURL__ %(startPoint,endPoint)
         response = urllib2.urlopen(url).read()
-        return self.__wktMaker__(response),url
+        return self.__wktMaker__(response), url
 
     def here(self, startPoint=str, endPoint=str):
         self.__serviceType__ = 1
@@ -151,6 +151,10 @@ class RouteProvider(object):
         if self.__serviceType__ == 0: #google JSON
             responseData = json.loads(response)
             polylines = []
+            
+            # LA-HACKS
+            # distance = responseData['routes'][0]['legs'][0]['distance']['value']
+
             steps = responseData['routes'][0]['legs'][0]['steps']
             for i in steps:
                 polylines.append(self.__gPolyDecode__(str(i['polyline']['points']), 5))

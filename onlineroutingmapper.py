@@ -141,106 +141,70 @@ class OnlineRoutingMapper(object):
         extentForZoom = transformer.transform(vectorLayer.extent())
         self.canvas.setExtent(extentForZoom)
         self.canvas.zoomScale(self.canvas.scale()*1.03) #zoom out a little bit.
-        QMessageBox.information(self.dlg, 'Information' ,'The analysis result was added to the canvas.')
+        # QMessageBox.information(self.dlg, 'Information' ,'The analysis result was added to the canvas.')
 
+    
+    def _getPorts(self):
+        """
+            Extract all the co-ordinates from a layer containing morocco_ports
+        """
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "PortByType OGRGeoJSON Point":
+                layer = lyr
+                break
+
+        if layer:
+            # We managed to get the layer
+            iter = layer.getFeatures()
+            ports = []
+            for feature in iter:
+                # x = long, y = lat
+                print feature['LAT_DEG'], feature['LONG_DEG']
+                port = str(feature['LAT_DEG']) + "," + str(feature['LONG_DEG'])
+                ports.append(port)
+            print 'length of port list is '+ len(ports)
+            return ports
+        else:
+            print 'The port list is empty'
+            return None
 
     def runAnalysis(self):
         if len(self.dlg.startTxt.text())>0 and len(self.dlg.stopTxt.text())>0:
-            if self.checkNetConnection():
-                startPoint = self.crsTransform(self.dlg.startTxt.text())
-                stopPoint = self.crsTransform(self.dlg.stopTxt.text())
+            
+            # Test
+            # load co-ordinates of two ports
+            # find distances against few postal co-ordinates
+           
+            ports = self._getPorts()
 
-                if self.dlg.serviceCombo.currentIndex() == 0: #google
-                    try:
-                        wkt,url = self.routeEngine.google(startPoint,stopPoint)
-                        # these comment lines maybe useful for debugging.
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+            # Ouarzazate: 30.916667, -6.916667
+            loc1_x = -6.916667
+            loc2_x = -5.224722
+            loc1_y = 30.916667
+            loc2_y = 33.441667
 
-                elif self.dlg.serviceCombo.currentIndex() == 1: #here
-                    try:
-                        wkt,url = self.routeEngine.here(startPoint,stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
+            loc1 = str(loc1_y) + "," + str(loc1_x)
+            loc2 = str(loc2_y) + "," + str(loc2_x)
+            # locs = [loc1, loc2]
+            locs = [loc1]
 
-                elif self.dlg.serviceCombo.currentIndex() == 2: #yourNavigation
-                    try:
-                        wkt,url = self.routeEngine.yourNavigation(startPoint,stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-                elif self.dlg.serviceCombo.currentIndex() == 3: #mapbox
-                    try:
-                        wkt,url = self.routeEngine.mapBox(startPoint,stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-                elif self.dlg.serviceCombo.currentIndex() == 4: #grapHopper
-                    try:
-                        wkt,url = self.routeEngine.graphHopper(startPoint,stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-                elif self.dlg.serviceCombo.currentIndex() == 5: #tomtom
-                    try:
-                        wkt,url = self.routeEngine.tomtom(startPoint,stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg,'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-                elif self.dlg.serviceCombo.currentIndex() == 6: #mapQuest
-                    try:
-                        wkt, url = self.routeEngine.mapQuest(startPoint, stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg, 'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-                elif self.dlg.serviceCombo.currentIndex() == 7: #mapQuest
-                    try:
-                        wkt, url = self.routeEngine.osrm(startPoint, stopPoint)
-                        # QgsMessageLog.logMessage(url)
-                        # QgsMessageLog.logMessage(wkt)
-                        self.routeMaker(wkt)
-                    except Exception as err:
-                        QgsMessageLog.logMessage(str(err))
-                        QMessageBox.warning(self.dlg, 'Analysis Error',
-                                            "Cannot calculate the route between the start and stop locations that you entered. Please use other Service APIs.")
-
-            else:
-                QMessageBox.warning(self.dlg, 'Network Error!', 'There is no internet connection.')
+            paths = []
+            # iterate over the ports, find the distance and draw the line
+            for port in ports:
+                # iterate over the locations
+                for loc in locs:
+                    startPoint = port
+                    stopPoint = loc
+                    print str(startPoint) + ', ' + str(stopPoint)
+        
+                    wkt, url = self.routeEngine.google(startPoint, stopPoint)
+                    paths.append({'wkt': wkt, 'url': url})
+                    # self.routeMaker(wkt)
+           
+            for route in paths:
+                self.routeMaker(route['wkt'])
+            # else:
+            #   QMessageBox.warning(self.dlg, 'Network Error!', 'There is no internet connection.')
         else:
             QMessageBox.information(self.dlg,'Warning', 'Please choose Start Location and Stop Location.')
 
